@@ -4,15 +4,110 @@
     @{
         foreach (var item in Model)
         {
-                    <div class="col">
-                        <div class="card">
-                            <img src="@item.ImageUrl" class="card-img-top" alt="...">
-                            <div class="card-body">
-                                <h4 class="card-title">@item.Name</h4>
-                                <h6 class="card-title">@item.Description</h6>
+            <div class="col">
+                <div class="card">
+                        <img src="@item.ImageUrl" class="card-img-top" alt="...">
+                        <div class="card-body">
+                            <h4 class="card-title">@item.Name</h4>
+                            <h6 class="card-title">@item.Description</h6>
+                            <button class="btn btn-primary show-recipe-btn">Show Recipe</button>
+                            <button class="btn btn-primary close-recipe-btn">Close Recipe</button>
+                            <div class="recipe-details">
+                                <h5>Recipe</h5>
+                                <p>@Html.Raw(item.Recipe)</p>
                             </div>
                         </div>
                     </div>
+                </div>
+        }
+    }
+</div>
+
+
+<script>
+    // Ngl, this is ChatGPT
+    var cards = document.getElementsByClassName('card');
+    var container = document.getElementById('card-container');
+
+    for (var i = 0; i < cards.length; i++) {
+        (function() {
+            var card = cards[i];
+            var showButton = card.getElementsByClassName('show-recipe-btn')[0];
+            var closeButton = card.getElementsByClassName('close-recipe-btn')[0];
+            var recipeDetails = card.getElementsByClassName('recipe-details')[0];
+
+            showButton.addEventListener('click', createShowRecipeHandler(card, showButton, closeButton));
+            closeButton.addEventListener('click', createCloseRecipeHandler(card, showButton, closeButton));
+
+            closeButton.style.display = 'none';
+        })();
+    }
+
+    function createShowRecipeHandler(card, showButton, closeButton) {
+        return function () {
+            hideOtherCards(card); // Hide other cards
+            card.classList.add('expanded');
+            showButton.style.display = 'none'; // Hide the "Show Recipe" button
+            closeButton.style.display = 'block';
+            moveCardToMiddle(card);
+        };
+    }
+
+    function createCloseRecipeHandler(card, showButton, closeButton) {
+        return function () {
+            showOtherCards(); // Show other cards
+            card.classList.remove('expanded');
+            showButton.style.display = 'block'; // Show the "Show Recipe" button
+            closeButton.style.display = 'none';
+            moveCardToOriginalPosition(card);
+        };
+    }
+
+    function hideOtherCards(currentCard) {
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            if (card !== currentCard) {
+                card.style.display = 'none'; // Hide the card
+            }
         }
     }
 
+    function showOtherCards() {
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            card.style.display = 'block'; // Show the card
+        }
+    }
+
+    function moveCardToMiddle(card) {
+        var containerWidth = container.offsetWidth;
+        var containerHeight = container.offsetHeight;
+        var cardWidth = card.offsetWidth;
+        var cardHeight = card.offsetHeight;
+
+        var cardPositionX = (containerWidth - cardWidth) / 2;
+        var cardPositionY = (containerHeight - cardHeight) / 2;
+        card.style.transform = 'translate(' + cardPositionX + 'px, ' + cardPositionY + 'px)';
+    }
+
+    function moveCardToOriginalPosition(card) {
+        card.style.transform = 'translate(0, 0)';
+    }
+
+    var recipeDetails = document.getElementsByClassName('recipe-details');
+
+    for (var i = 0; i < recipeDetails.length; i++) {
+        var recipeDetail = recipeDetails[i];
+        var recipeParagraph = recipeDetail.getElementsByTagName('p')[0];
+
+        var serializedRecipe = JSON.parse(recipeParagraph.innerHTML).recipe;
+        recipeParagraph.innerHTML = serializedRecipe.replace(/\n/g, '<br>');
+    }
+
+    function replacer(key, value) {
+        if (typeof value === 'string') {
+            return value.replace(/\\n/g, '\n');
+        }
+        return value;
+    }
+</script>

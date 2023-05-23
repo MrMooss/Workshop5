@@ -27,6 +27,25 @@ body {
         padding: 5px;
     }
 
-.card img {
-    height: 260px;
+.card {
+    overflow: hidden;
+    transition: max-height 0.3s, width 0.3s;
+    max-height: 100%;
+    width: 100%;
 }
+
+    .card.expanded {
+        width: 1000px;
+    }
+
+    .card .card-body .recipe-details {
+        display: none;
+        overflow: hidden;
+        transition: max-height 0.3s;
+        max-height: 0;
+    }
+
+    .card.expanded .card-body .recipe-details {
+        display: block;
+        max-height: 1000px;
+    }

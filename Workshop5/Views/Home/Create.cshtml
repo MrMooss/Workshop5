@@ -4,10 +4,31 @@
 
 <form method="post" enctype="multipart/form-data" class="foodForm">
     <label>Name</label>
-    <input type="text" name="name" />
+    <input type="text" name="name" required/>
     <label>Description</label>
-    <input type="text" name="description" />
+    <input type="text" name="description" required/>
     <label>Upload file</label>
-    <input type="file" name="imageFile" />
+    <input type="file" name="imageFile" required/>
+    <label>Recipe</label>
+    <textarea id="recipeTextarea" name="recipe" rows="10" required></textarea>
+    <input type="hidden" id="recipeJson" name="recipeJson"/>
     <input type="submit" value="Upload" />
 </form>
+
+
+<script>
+    var recipeTextarea = document.getElementById('recipeTextarea');
+    var recipeJsonInput = document.getElementById('recipeJson');
+    
+    recipeTextarea.addEventListener('input', function() {
+        var serializedRecipe = JSON.stringify({ recipe: this.value }, replacer, 2);
+        recipeJsonInput.value = serializedRecipe;
+    });
+    
+    function replacer(key, value) {
+        if (typeof value === 'string') {
+            return value.replace(/(?:\r\n|\r|\n)/g, '\\n');
+        }
+        return value;
+    }
+</script>

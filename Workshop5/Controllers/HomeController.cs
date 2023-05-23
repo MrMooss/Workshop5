@@ -39,15 +39,18 @@ namespace Workshop5.Controllers
 
             BlobClient blobClient = blobContainerClient.GetBlobClient(blobItem.Name);
 
-            using (MemoryStream stream = new MemoryStream())
+            if (blobClient.Exists())
             {
-                await blobClient.DownloadToAsync(stream);
-                stream.Position = 0;
-
-                using (StreamReader reader = new StreamReader(stream))
+                using (MemoryStream stream = new MemoryStream())
                 {
-                    string json = reader.ReadToEnd();
-                    foods = JsonConvert.DeserializeObject<List<Food>>(json);
+                    await blobClient.DownloadToAsync(stream);
+                    stream.Position = 0;
+
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        string json = reader.ReadToEnd();
+                        foods = JsonConvert.DeserializeObject<List<Food>>(json);
+                    }
                 }
             }
 

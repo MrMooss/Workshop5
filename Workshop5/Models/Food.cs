@@ -11,6 +11,8 @@ namespace Workshop5.Models
 
         public string Description { get; set; }
 
+        public string Recipe { get; set; }
+
         public string ImageUrl { get; set; }
 
         public Food()
