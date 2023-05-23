@@ -1,7 +1,9 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Workshop5.Models;
 
@@ -25,28 +27,40 @@ namespace Workshop5.Controllers
 
         public async Task<IActionResult> Index()
         {
+            return View();
+        }
+
+
+        public async Task<IActionResult> ListFood()
+        {
             List<Food> foods = new List<Food>();
 
-            await foreach (var blobItem in blobContainerClient.GetBlobsAsync())
+            foreach (var blobItem in blobContainerClient.GetBlobs())
             {
-                BlobClient blobClient = blobContainerClient.GetBlobClient(blobItem.Name);
-
-                using (MemoryStream stream = new MemoryStream())
+                if (blobItem.Name.EndsWith(".json"))
                 {
-                    await blobClient.DownloadToAsync(stream);
-                    stream.Position = 0;
+                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobItem.Name);
 
-                    string json = Encoding.UTF8.GetString(stream.ToArray());
-                    Food food = JsonConvert.DeserializeObject<Food>(json);
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        await blobClient.DownloadToAsync(stream);
+                        stream.Position = 0;
 
-                    foods.Add(food);
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            string json = reader.ReadToEnd();
+                            Food food = JsonConvert.DeserializeObject<Food>(json);
+                            foods.Add(food);
+                        }
+                    }
                 }
+                
             }
 
             return View(foods);
         }
 
-        public ActionResult Create()
+        public IActionResult Create()
         {
             return View();
         }
@@ -58,15 +72,24 @@ namespace Workshop5.Controllers
             if (imageFile != null && imageFile.Length > 0)
             {
                 string fileName = food.Id + ".json";
-                string json = JsonConvert.SerializeObject(food);
+                string imageName = food.Id + "__" + imageFile.Name;
 
-                BlobClient blobClient = blobContainerClient.GetBlobClient(food.Id);
+                BlobClient imageBlobClient = blobContainerClient.GetBlobClient(imageName);
+
+                using (var imageStream = imageFile.OpenReadStream())
+                {
+                    await imageBlobClient.UploadAsync(imageStream);
+                }
+
+                food.ImageUrl = imageBlobClient.Uri.ToString();
+
+                string json = JsonConvert.SerializeObject(food);
+                BlobClient blobClient = blobContainerClient.GetBlobClient(fileName);
 
                 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
                 {
-                    await blobClient.UploadAsync(stream, overwrite: true);
+                    await blobClient.UploadAsync(stream);
                 }
-                food.ImageUrl = blobClient.Uri.ToString();
             }
 
             return RedirectToAction("Index");

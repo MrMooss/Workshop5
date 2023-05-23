@@ -1,0 +1,13 @@
+﻿@model Food
+
+<h2>Recept beküldése</h2>
+
+<form method="post" enctype="multipart/form-data" class="foodForm">
+    <label>Name</label>
+    <input type="text" name="name" />
+    <label>Description</label>
+    <input type="text" name="description" />
+    <label>Upload file</label>
+    <input type="file" name="imageFile" />
+    <input type="submit" value="Upload" />
+</form>
