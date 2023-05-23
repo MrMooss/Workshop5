@@ -35,26 +35,20 @@ namespace Workshop5.Controllers
         {
             List<Food> foods = new List<Food>();
 
-            foreach (var blobItem in blobContainerClient.GetBlobs())
+            var blobItem = blobContainerClient.GetBlobClient("foods.json");
+
+            BlobClient blobClient = blobContainerClient.GetBlobClient(blobItem.Name);
+
+            using (MemoryStream stream = new MemoryStream())
             {
-                if (blobItem.Name.EndsWith(".json"))
+                await blobClient.DownloadToAsync(stream);
+                stream.Position = 0;
+
+                using (StreamReader reader = new StreamReader(stream))
                 {
-                    BlobClient blobClient = blobContainerClient.GetBlobClient(blobItem.Name);
-
-                    using (MemoryStream stream = new MemoryStream())
-                    {
-                        await blobClient.DownloadToAsync(stream);
-                        stream.Position = 0;
-
-                        using (StreamReader reader = new StreamReader(stream))
-                        {
-                            string json = reader.ReadToEnd();
-                            Food food = JsonConvert.DeserializeObject<Food>(json);
-                            foods.Add(food);
-                        }
-                    }
+                    string json = reader.ReadToEnd();
+                    foods = JsonConvert.DeserializeObject<List<Food>>(json);
                 }
-                
             }
 
             return View(foods);
@@ -69,9 +63,10 @@ namespace Workshop5.Controllers
         public async Task<IActionResult> Create([FromForm] Food food, [FromForm] IFormFile imageFile)
         {
 
+            List<Food> foods = new List<Food>();
+
             if (imageFile != null && imageFile.Length > 0)
             {
-                string fileName = food.Id + ".json";
                 string imageName = food.Id + "__" + imageFile.Name;
 
                 BlobClient imageBlobClient = blobContainerClient.GetBlobClient(imageName);
@@ -83,12 +78,29 @@ namespace Workshop5.Controllers
 
                 food.ImageUrl = imageBlobClient.Uri.ToString();
 
-                string json = JsonConvert.SerializeObject(food);
-                BlobClient blobClient = blobContainerClient.GetBlobClient(fileName);
+                
+                BlobClient blobClient = blobContainerClient.GetBlobClient("foods.json");
 
+                if (blobClient.Exists())
+                {
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        await blobClient.DownloadToAsync(stream);
+                        stream.Position = 0;
+
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            string foodsJson = reader.ReadToEnd();
+                            foods = JsonConvert.DeserializeObject<List<Food>>(foodsJson);
+
+                        }
+                    }
+                }
+                foods.Add(food);
+                string json = JsonConvert.SerializeObject(foods);
                 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
                 {
-                    await blobClient.UploadAsync(stream);
+                    await blobClient.UploadAsync(stream, overwrite: true);
                 }
             }
 
